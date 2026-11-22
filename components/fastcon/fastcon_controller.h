@@ -26,7 +26,7 @@ namespace esphome
             void setup() override;
             void loop() override;
 
-            // 1 byte (off, or on + brightness) or 6 bytes (on + brightness, then blue, red, green, warm, cold)
+            // 1 byte (0x00 off or 0x80 on) or 6 bytes (on + brightness, then blue, red, green, warm, cold)
             std::vector<uint8_t> get_light_data(const light::LightColorValues &values);
             std::vector<uint8_t> single_control(uint32_t addr, const std::vector<uint8_t> &light_data);
 

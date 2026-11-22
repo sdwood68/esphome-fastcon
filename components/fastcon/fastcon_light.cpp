@@ -170,7 +170,7 @@ namespace esphome
                 return light_data;
             auto shown = shown_bytes(light_data);
             if (shown == this->shown_ && !resent)
-                return {light_data[0]};
+                return {0x80};
             this->shown_ = std::move(shown);
             return light_data;
         }

@@ -134,7 +134,7 @@ Each light is either a single bulb (`light_id`) or a group (`group_id`). Use exa
 - **id** (*Optional*, ID): The ID to use for this light component
 - **controller_id** (*Optional*, ID): The ID of the controller to use. Defaults to "fastcon_controller"
 
-Like the brMesh app, turning a light on or off at the brightness it already had doesn't send a color: the bulb keeps whatever color it last had. Changing the brightness (also turning on at a new one) sends the light's color along with it, because some bulbs ignore a brightness sent on its own. On a group light, that means dimming the group also gives every bulb in it the group's color. A color is also sent when you change it, or when you pick the color a light that is already on already has, which re-applies it (for example to a group whose bulbs were changed one by one). If you change a bulb's color in the brMesh app, Home Assistant keeps showing the old color until you set one from Home Assistant.
+Like the brMesh app, turning a light on or off at the brightness it already had doesn't send a color: the bulb keeps whatever color it last had. Plain ON is the app's short `0x80` command; brightness is sent in a full color command. Changing the brightness (also turning on at a new one) sends the light's color along with it. On a group light, that means dimming the group also gives every bulb in it the group's color. A color is also sent when you change it, or when you pick the color a light that is already on already has, which re-applies it (for example to a group whose bulbs were changed one by one). If you change a bulb's color in the brMesh app, Home Assistant keeps showing the old color until you set one from Home Assistant.
 
 ## Group Control
 

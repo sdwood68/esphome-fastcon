@@ -76,9 +76,9 @@ namespace esphome
             const std::vector<FastconLight *> &get_members_() const;
             // Take values' color and brightness as what the bulb already shows (also for a light that is off)
             void remember_shown_(const light::LightColorValues &values);
-            // A full command whose color and brightness the bulb already shows becomes the short
-            // "on + brightness" command, so a plain on/off never sends color, as with the brMesh app.
-            // Dimming sends the full command, since some bulbs ignore the short command's brightness
+            // A full command whose color and brightness the bulb already shows becomes the app's
+            // short 0x80 ON command, so a plain on/off never sends color. Dimming sends the full
+            // command, since brightness is not encoded in the app's short ON command
             // (#22). A write that changes nothing at all (resent) is an explicit request, so it stays full.
             std::vector<uint8_t> drop_unchanged_color_(const std::vector<uint8_t> &light_data, bool resent);
             std::vector<uint8_t> get_member_ids_() const;

@@ -263,9 +263,11 @@ namespace esphome
                     return light_data;
                 }
                 // No color chosen yet (e.g. a plain "turn on" after the controller
-                // restarted). Send the short "on + brightness" command so the bulb keeps its own
-                // last color. Sending every color channel as 0 here would light the bulb "black".
-                return std::vector<uint8_t>({on_brightness});
+                // restarted). The app's short ON command is exactly 0x80; brightness
+                // is only meaningful in a full color command. Some bulbs reject 0xFF
+                // here even though its high bit is set. Sending every color channel as
+                // 0 would instead light the bulb "black".
+                return std::vector<uint8_t>({0x80});
             }
 
             if (has_rgb)
@@ -430,7 +432,7 @@ namespace esphome
             on[1] = 0x2A;
             on[2] = 0xA8;
             on[3] = group_id;
-            on[4] = 0xFF;
+            on[4] = 0x80;
 
             // Clear this group's slots before queueing, so the "on" always goes out ahead of the effect
             // (a pending steady command would otherwise be replaced in place, ahead of a newly queued
