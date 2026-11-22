@@ -133,7 +133,10 @@ namespace esphome
                 esp_ble_adv_params_t adv_params = {
                     .adv_int_min = adv_interval_min_,
                     .adv_int_max = adv_interval_max_,
-                    .adv_type = ADV_TYPE_NONCONN_IND,
+                    // Match the Android brMesh advertiser: connectable legacy
+                    // advertising. Some bulbs ignore addressed commands sent as
+                    // non-connectable advertisements even though broadcasts work.
+                    .adv_type = ADV_TYPE_IND,
                     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
                     .peer_addr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
                     .peer_addr_type = BLE_ADDR_TYPE_PUBLIC,
@@ -162,7 +165,9 @@ namespace esphome
                 // Add flags
                 adv_data_raw[adv_data_len++] = 2;
                 adv_data_raw[adv_data_len++] = ESP_BLE_AD_TYPE_FLAG;
-                adv_data_raw[adv_data_len++] = ESP_BLE_ADV_FLAG_BREDR_NOT_SPT | ESP_BLE_ADV_FLAG_GEN_DISC;
+                // Match the flags emitted by brMesh and the hardware-tested ESP32
+                // reference implementations.
+                adv_data_raw[adv_data_len++] = 0x1A;
 
                 // Add manufacturer data
                 // AD structure length includes the type byte, the 2-byte company ID,
