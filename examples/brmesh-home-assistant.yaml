@@ -1,0 +1,90 @@
+# Copy this file outside the repository or rename it to brmesh.yaml.
+# Put the referenced values in secrets.yaml; never commit that file.
+substitutions:
+  device_name: esp-brmesh-bridge
+  friendly_name: "ESP BrMesh Bridge"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: wemos_d1_uno32
+  framework:
+    type: arduino
+
+logger:
+
+api:
+  encryption:
+    key: !secret home_assistant_api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+# Required by Fastcon. Avoid esp32_ble_tracker unless another component needs it.
+esp32_ble_server:
+
+# This local source makes changes in components/ available to this device build.
+external_components:
+  - source:
+      type: local
+      path: ../components
+    components: [fastcon]
+
+fastcon:
+  mesh_key: !secret brmesh_key
+  adv_interval_min: 0x20
+  adv_interval_max: 0x40
+  adv_duration: 50
+  adv_gap: 10
+  max_queue_size: 100
+  repeat_count: 1
+
+light:
+  - platform: fastcon
+    name: "All Lights"
+    group_id: 0
+    default_transition_length: 0s
+
+  - platform: fastcon
+    id: house_right_flood
+    name: "House Right Flood"
+    light_id: 1
+    default_transition_length: 0s
+
+  - platform: fastcon
+    id: house_left_flood
+    name: "House Left Flood"
+    light_id: 2
+    default_transition_length: 0s
+
+  - platform: fastcon
+    id: flood_3
+    name: "Flood 3"
+    light_id: 3
+    default_transition_length: 0s
+
+button:
+  - platform: template
+    name: "Assign bulbs to their groups"
+    entity_category: config
+    on_press:
+      - fastcon.assign_members
+
+  # Optional: replace 0x31 with a scene ID captured from the brMesh app.
+  - platform: template
+    name: "Recall brMesh Scene"
+    on_press:
+      - fastcon.recall_scene:
+          scene_id: 0x31

@@ -85,6 +85,8 @@ namespace esphome
                                   const std::vector<uint8_t> &member_light_ids = {});
             // Store a group number in one bulb (kept by the bulb; 0 removes it from its group)
             void send_set_group(uint8_t light_id, uint8_t group_id);
+            // Replay a stored scene selected by the brMesh app (inner payload 3B 00 00 <scene-id>).
+            void send_app_scene(uint8_t scene_id);
             // Every single-bulb light, so group 0 ("All") can mirror its state onto all of them
             void register_light(FastconLight *light) { lights_.push_back(light); }
             const std::vector<FastconLight *> &get_lights() const { return lights_; }
@@ -116,6 +118,7 @@ namespace esphome
             static constexpr uint32_t GROUP_QUEUE_KEY = 0x10000;     // + group id (steady state or effect)
             static constexpr uint32_t SET_GROUP_QUEUE_KEY = 0x20000; // + light id
             static constexpr uint32_t GROUP_ON_QUEUE_KEY = 0x30000;  // + group id (the "on" sent before an effect)
+            static constexpr uint32_t APP_SCENE_QUEUE_KEY = 0x40000;
 
             // Drop anything still queued (including pending repeats) for these bulbs or queue keys
             void drop_queued_(const std::vector<uint8_t> &light_ids, std::initializer_list<uint32_t> keys);
@@ -177,6 +180,18 @@ namespace esphome
 
         protected:
             light::LightState *group_{nullptr};
+        };
+
+        template <typename... Ts>
+        class RecallSceneAction : public Action<Ts...>, public Parented<FastconController>
+        {
+        public:
+            TEMPLATABLE_VALUE(uint8_t, scene_id)
+
+            void play(const Ts &...x) override
+            {
+                this->parent_->send_app_scene(this->scene_id_.value(x...));
+            }
         };
 
     } // namespace fastcon

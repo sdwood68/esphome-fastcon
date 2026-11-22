@@ -21,6 +21,7 @@ Be warned - there is also a brLight app, which might look like brMesh, but the p
 - Per-light capabilities for RGB-only, white-only and single-white bulbs
 - Group control (all bulbs in a group change at the same instant)
 - The bulbs' built-in effects (flash and fade sequences) on group lights
+- Replay of stored brMesh app scenes from captured scene IDs
 
 ## Configuration
 
@@ -243,6 +244,25 @@ light:
 
 While an effect runs, the group light doesn't send color or brightness changes, because any steady-color command ends the effect on the bulbs. Those changes are kept and go out when the effect is stopped: setting the effect back to None sends the group's current color, and turning the light off always goes out. The members' entities aren't changed when an effect starts.
 
+### Replaying stored brMesh scenes
+
+The brMesh app selects a stored scene with a one-byte scene ID. If you have
+captured that ID from the app, expose it as a Home Assistant button with
+`fastcon.recall_scene`:
+
+```yaml
+button:
+  - platform: template
+    name: "Recall Holiday Scene"
+    on_press:
+      - fastcon.recall_scene:
+          scene_id: 0x31
+```
+
+`scene_id` accepts a value from `0x00` through `0xFF` and may be templated. These
+IDs belong to the scene configuration created by the brMesh app; they are not the
+same as the multi-step `fastcon_scene` effects defined in ESPHome YAML.
+
 ### Protocol notes
 
 These layouts were worked out by analysing the brMesh Android app (5.92), for interoperability with the author's own lights. All use command type 5 and the same packet format as single-light control; only the inner payload differs:
@@ -252,6 +272,7 @@ These layouts were worked out by analysing the brMesh Android app (5.92), for in
 | Group control | `((len+3)<<4)\|3`, `2A A8` (light device type), group, then 1- or 6-byte light data |
 | Built-in effect | `((k+2)<<4)\|0x0C`, group, speed (in 1/64 s ticks), then k steps (up to 9; first step `\| 0x40`, plus `\| 0x80` for flash) |
 | Set a bulb's group | `21`, light id, group (forward bit clear) |
+| Recall stored app scene | `3B 00 00`, scene id |
 
 ## Finding Your Mesh Key
 

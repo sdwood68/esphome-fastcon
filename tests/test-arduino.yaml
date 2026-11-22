@@ -68,3 +68,8 @@ button:
     name: "Assign all groups"
     on_press:
       - fastcon.assign_members
+  - platform: template
+    name: "Recall captured scene"
+    on_press:
+      - fastcon.recall_scene:
+          scene_id: 0x31

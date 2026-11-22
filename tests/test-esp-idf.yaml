@@ -63,3 +63,8 @@ button:
     on_press:
       - fastcon.assign_members:
           group: room_group
+  - platform: template
+    name: "Recall captured scene"
+    on_press:
+      - fastcon.recall_scene:
+          scene_id: 0x31

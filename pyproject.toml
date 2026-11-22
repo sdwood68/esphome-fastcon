@@ -5,8 +5,8 @@ description = ""
 license = { text = "MIT" }
 authors = [{ name = "Dennis George" }]
 keywords = ["esphome", "homeassistant", "home", "automation"]
-requires-python = ">=3.9.0"
-dependencies = ["esphome>=2024.12.2"]
+requires-python = ">=3.11.0,<3.16"
+dependencies = ["esphome>=2026.3.0"]
 
 [tool.uv]
 default-groups = ["lint"]

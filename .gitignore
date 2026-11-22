@@ -175,3 +175,7 @@ cython_debug/
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 secrets.yaml
+
+# Local device configuration and brMesh exports contain credentials/mesh keys.
+/brmesh.yaml
+/BRMESH_BACKUP*.json

@@ -447,6 +447,16 @@ namespace esphome
             queueCommand(SET_GROUP_QUEUE_KEY + light_id, generate_command(5, light_id, inner, false));
         }
 
+        void FastconController::send_app_scene(uint8_t scene_id)
+        {
+            // Captured from brMesh: 3B 00 00 <scene-id>, padded to the 12-byte inner payload.
+            std::vector<uint8_t> inner(12, 0);
+            inner[0] = 0x3B;
+            inner[3] = scene_id;
+            ESP_LOGI(TAG, "Recalling brMesh scene 0x%02X", scene_id);
+            queueCommand(APP_SCENE_QUEUE_KEY, generate_command(5, 0, inner, true));
+        }
+
         void FastconController::assign_members(light::LightState *group)
         {
             for (auto *candidate : this->groups_)

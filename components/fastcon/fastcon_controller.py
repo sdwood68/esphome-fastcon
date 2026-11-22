@@ -16,6 +16,7 @@ CONF_REPEAT_COUNT = "repeat_count"
 CONF_GROUP_ID = "group_id"
 CONF_GROUP = "group"
 CONF_TX_POWER = "tx_power"
+CONF_SCENE_ID = "scene_id"
 
 esp_power_level_t = cg.global_ns.enum("esp_power_level_t")
 # Advertising TX power in dBm
@@ -66,6 +67,9 @@ SetGroupAction = fastcon_ns.class_(
 )
 AssignMembersAction = fastcon_ns.class_(
     "AssignMembersAction", automation.Action, cg.Parented.template(FastconController)
+)
+RecallSceneAction = fastcon_ns.class_(
+    "RecallSceneAction", automation.Action, cg.Parented.template(FastconController)
 )
 
 CONFIG_SCHEMA = cv.Schema(
@@ -181,4 +185,24 @@ async def assign_members_to_code(config, action_id, template_arg, args):
     if CONF_GROUP in config:
         group = await cg.get_variable(config[CONF_GROUP])
         cg.add(var.set_group(group))
+    return var
+
+
+# Replay a stored-scene selection captured from the brMesh app.
+@automation.register_action(
+    "fastcon.recall_scene",
+    RecallSceneAction,
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.use_id(FastconController),
+            cv.Required(CONF_SCENE_ID): cv.templatable(cv.hex_uint8_t),
+        }
+    ),
+    synchronous=True,
+)
+async def recall_scene_to_code(config, action_id, template_arg, args):
+    var = cg.new_Pvariable(action_id, template_arg)
+    await cg.register_parented(var, config[CONF_ID])
+    scene_id = await cg.templatable(config[CONF_SCENE_ID], args, cg.uint8)
+    cg.add(var.set_scene_id(scene_id))
     return var
