@@ -49,7 +49,7 @@ fastcon:
   # Optional parameters to control the advertisement protocol with their defaults:
   adv_interval_min: 0x20  # Minimum advertisement interval
   adv_interval_max: 0x40  # Maximum advertisement interval
-  adv_duration: 50        # Advertisement duration in milliseconds
+  adv_duration: 3000      # Match the brMesh app's reliable transmit window
   adv_gap: 10             # Gap between advertisements in milliseconds
   max_queue_size: 100     # Maximum number of queued commands
   repeat_count: 1         # How many times each command is broadcast
@@ -85,7 +85,7 @@ button:
 - **id** (*Optional*, ID): The ID to use for this controller component. Defaults to "fastcon_controller"
 - **adv_interval_min** (*Optional*, int): Minimum advertisement interval. Defaults to 0x20
 - **adv_interval_max** (*Optional*, int): Maximum advertisement interval. Defaults to 0x40
-- **adv_duration** (*Optional*, int): Duration of each advertisement in milliseconds. Defaults to 50
+- **adv_duration** (*Optional*, int): Duration of each advertisement in milliseconds. Defaults to 3000, matching the brMesh app's transmit window
 - **adv_gap** (*Optional*, int): Gap between advertisements in milliseconds. Defaults to 10
 - **max_queue_size** (*Optional*, int): Maximum number of commands that can be queued. Defaults to 100
 - **repeat_count** (*Optional*, int, 1-5): How many times each command is broadcast. Repeats go round-robin across the lights, so a bulb that misses one copy catches the next one shortly after. Defaults to 1
@@ -97,7 +97,7 @@ The queue keeps at most one pending command per light: a newer command for a lig
 
 ### Tuning for speed and reliability
 
-The defaults are deliberately conservative. With 8 bulbs, this combination made every command land on the first tap while roughly halving the time for all bulbs to change (about 0.26 s for the first copy to reach all 8, versus about 0.42 s with the defaults). It needs a controller that isn't scanning (see [Troubleshooting](#troubleshooting)):
+The reliable default matches the brMesh app by keeping each command on air for three seconds. That is slow when controlling many bulbs separately. If your bridge is close to the bulbs, this faster configuration may work; test it thoroughly in your installation. It needs a controller that isn't scanning (see [Troubleshooting](#troubleshooting)):
 
 ```yaml
 fastcon:
@@ -115,7 +115,7 @@ light:
     default_transition_length: 0s   # transitions would queue a burst of intermediate commands
 ```
 
-If bulbs miss commands with these settings, raise `adv_duration` (100-200 ms) or set `tx_power: 9`. Group lights send one command for the whole group, so even slow settings stay quick for them.
+If bulbs miss commands with these settings, raise `adv_duration` toward the reliable 3000 ms default or set `tx_power: 9`. Group lights send one command for the whole group, so even slow settings stay quick for them.
 
 Note: the ESP32's Bluetooth stack rejects advertising intervals below 0x20, so values like 0x06 fail to advertise.
 
@@ -304,7 +304,8 @@ Use the key exactly as printed: it's already in the hex format `mesh_key` expect
 
 - **Remove `esp32_ble_tracker:`** unless another component needs it. By default it scans continuously, which takes radio time away from advertising, so bulbs miss most commands. If you do need it, set `scan_parameters: continuous: false`.
 - Check the log for `fastcon.controller` warnings. A warning there means the Bluetooth controller rejected a command, which the log otherwise wouldn't show.
-- Give each command more airtime: raise `adv_duration` (try 100-200), set `repeat_count: 2`, or set `tx_power: 9`.
+- Keep the default `adv_duration: 3000` while diagnosing reliability. Shorter windows trade reliability for speed; increase the duration again or set `tx_power: 9` if commands are missed.
+- Use a build with the persistent sequence-counter fix. Older builds restart at sequence zero after every reboot, and bulbs can discard those recently reused numbers as replayed commands.
 - Make sure the brMesh app still controls the bulbs, and that the mesh key is the one the app uses now. Resetting or re-pairing bulbs can create a new mesh.
 
 **Color temperature or white does nothing.** The bulbs may not have those LEDs. If the brMesh app only shows a color wheel (plus at most one "white" preset), set `supports_color_temperature: false`. If it has no white at all, set `supports_white: false`. See [Fastcon Light](#fastcon-light).

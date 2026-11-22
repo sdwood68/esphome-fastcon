@@ -7,6 +7,7 @@
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
+#include "esphome/core/preferences.h"
 #include "esphome/components/esp32_ble_server/ble_server.h"
 #include <esp_bt.h>
 #include <esp_gap_ble_api.h>
@@ -138,9 +139,18 @@ namespace esphome
 
             std::array<uint8_t, 4> mesh_key_{};
 
+            // Bulbs discard recently reused sequence numbers as replayed packets. Reserve counters
+            // in blocks so a reboot skips anything that might have been transmitted, while avoiding
+            // a flash write for every command.
+            ESPPreferenceObject sequence_pref_;
+            uint8_t sequence_{64};
+            uint8_t sequence_reservation_end_{64};
+            void reserve_sequence_block_();
+            static uint8_t advance_sequence_(uint8_t sequence, uint8_t count);
+
             uint16_t adv_interval_min_{0x20};
             uint16_t adv_interval_max_{0x40};
-            uint16_t adv_duration_{50};
+            uint16_t adv_duration_{3000};
             uint16_t adv_gap_{10};
             esp_power_level_t tx_power_{ESP_PWR_LVL_P9};
             bool has_tx_power_{false};

@@ -46,7 +46,7 @@ fastcon:
   mesh_key: !secret brmesh_key
   adv_interval_min: 0x20
   adv_interval_max: 0x40
-  adv_duration: 50
+  adv_duration: 3000
   adv_gap: 10
   max_queue_size: 100
   repeat_count: 1

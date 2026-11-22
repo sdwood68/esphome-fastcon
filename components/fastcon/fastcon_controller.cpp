@@ -12,6 +12,26 @@ namespace esphome
     namespace fastcon
     {
         static const char *const TAG = "fastcon.controller";
+        static constexpr uint8_t SEQUENCE_BLOCK_SIZE = 32;
+        static constexpr uint32_t SEQUENCE_PREFERENCE_KEY = 0xFA57C001;
+
+        uint8_t FastconController::advance_sequence_(uint8_t sequence, uint8_t count)
+        {
+            while (count-- > 0)
+            {
+                sequence++;
+                if (sequence >= 255)
+                    sequence = 1;
+            }
+            return sequence;
+        }
+
+        void FastconController::reserve_sequence_block_()
+        {
+            this->sequence_reservation_end_ = advance_sequence_(this->sequence_, SEQUENCE_BLOCK_SIZE);
+            if (!this->sequence_pref_.save(&this->sequence_reservation_end_))
+                ESP_LOGW(TAG, "Could not persist the next Fastcon sequence block");
+        }
 
         void FastconController::queueCommand(uint32_t light_id_, const std::vector<uint8_t> &data)
         {
@@ -49,7 +69,14 @@ namespace esphome
 
         void FastconController::setup()
         {
+            this->sequence_pref_ = global_preferences->make_preference<uint8_t>(SEQUENCE_PREFERENCE_KEY);
+            uint8_t saved_sequence = 0;
+            if (this->sequence_pref_.load(&saved_sequence) && saved_sequence > 0 && saved_sequence < 255)
+                this->sequence_ = saved_sequence;
+            this->reserve_sequence_block_();
+
             ESP_LOGCONFIG(TAG, "Setting up Fastcon BLE Controller...");
+            ESP_LOGCONFIG(TAG, "  First packet sequence: %u", this->sequence_);
             ESP_LOGCONFIG(TAG, "  Advertisement interval: %d-%d", this->adv_interval_min_, this->adv_interval_max_);
             ESP_LOGCONFIG(TAG, "  Advertisement duration: %dms", this->adv_duration_);
             ESP_LOGCONFIG(TAG, "  Advertisement gap: %dms", this->adv_gap_);
@@ -328,7 +355,10 @@ namespace esphome
 
         std::vector<uint8_t> FastconController::generate_command(uint8_t n, uint32_t light_id_, const std::vector<uint8_t> &data, bool forward)
         {
-            static uint8_t sequence = 0;
+            // Before entering the block previously reserved for the next boot, reserve another
+            // block. A sudden reset can therefore only skip counters, never reuse them.
+            if (this->sequence_ == this->sequence_reservation_end_)
+                this->reserve_sequence_block_();
 
             // Create command body with header
             std::vector<uint8_t> body(data.size() + 4);
@@ -336,9 +366,8 @@ namespace esphome
 
             // Construct header
             body[0] = (i2 & 0b1111) | ((n & 0b111) << 4) | (forward ? 0x80 : 0);
-            body[1] = sequence++; // Use and increment sequence number
-            if (sequence >= 255)
-                sequence = 1;
+            body[1] = this->sequence_;
+            this->sequence_ = advance_sequence_(this->sequence_, 1);
 
             body[2] = this->mesh_key_[3]; // Safe key
 

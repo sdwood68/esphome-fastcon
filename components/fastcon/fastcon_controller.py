@@ -33,7 +33,10 @@ TX_POWER_LEVELS = {
 
 DEFAULT_ADV_INTERVAL_MIN = 0x20
 DEFAULT_ADV_INTERVAL_MAX = 0x40
-DEFAULT_ADV_DURATION = 50
+# The Android brMesh app keeps each command on air for about three seconds.
+# Short windows can appear to work intermittently because a bulb hears only an
+# occasional advertisement, especially through walls or near Wi-Fi traffic.
+DEFAULT_ADV_DURATION = 3000
 DEFAULT_ADV_GAP = 10
 DEFAULT_MAX_QUEUE_SIZE = 100
 DEFAULT_REPEAT_COUNT = 1
