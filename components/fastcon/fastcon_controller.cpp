@@ -165,7 +165,11 @@ namespace esphome
                 adv_data_raw[adv_data_len++] = ESP_BLE_ADV_FLAG_BREDR_NOT_SPT | ESP_BLE_ADV_FLAG_GEN_DISC;
 
                 // Add manufacturer data
-                adv_data_raw[adv_data_len++] = cmd.data.size() + 2;
+                // AD structure length includes the type byte, the 2-byte company ID,
+                // and the complete Fastcon RF payload. Using +2 truncates the final
+                // RF byte from the manufacturer-data field even though it remains in
+                // the raw buffer, causing bulbs to reject the frame.
+                adv_data_raw[adv_data_len++] = cmd.data.size() + 3;
                 adv_data_raw[adv_data_len++] = ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE;
                 adv_data_raw[adv_data_len++] = MANUFACTURER_DATA_ID & 0xFF;
                 adv_data_raw[adv_data_len++] = (MANUFACTURER_DATA_ID >> 8) & 0xFF;
