@@ -6,6 +6,8 @@ This is a custom component for ESPHome that allows you to control Broadlink Fast
 
 Be warned - there is also a brLight app, which might look like brMesh, but the protocol is different.
 
+See [Future Work](ROADMAP.md) for the planned Home Assistant scene/group editor and phone-free light commissioning design.
+
 ## Requirements
 
 - ESP32 board (`arduino` or `esp-idf` framework)
