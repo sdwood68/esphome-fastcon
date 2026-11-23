@@ -2,6 +2,70 @@
 
 This file records larger features that need protocol validation or coordinated ESPHome and Home Assistant work before implementation.
 
+## Target architecture
+
+Home Assistant should provide the brMesh-app-like setup and configuration experience. The ESP device should implement only the physical BLE transport.
+
+Home Assistant owns:
+
+- Mesh-key generation, import, protected storage, backup, and recovery.
+- Fastcon frame construction, encryption, whitening, CRC, discovery decoding, binding, and heartbeat validation.
+- The light/device database, address allocation, capabilities, names, groups, scenes, effects, and commissioning state machine.
+- Dynamic Home Assistant entities and the complete setup, group, and scene user interfaces.
+
+The ESP radio owns:
+
+- Starting and stopping BLE scans and forwarding raw manufacturer advertisements.
+- Advertising an arbitrary raw payload for a requested duration and interval with specified power, flags, and advertising type.
+- Cancelling or replacing queued transmissions and reporting accepted, started, completed, cancelled, and failed states.
+- A small bounded queue for temporary network jitter plus radio, Wi-Fi, and firmware diagnostics.
+
+The radio API must be protocol-neutral. A transmit request contains an already encoded payload and radio parameters; the ESP should not need a mesh key, light address, group, scene, or Fastcon packet encoder. Communication must be encrypted and authenticated. Prototype an ESPHome native-API extension first to retain ESPHome provisioning, OTA, logs, and health reporting; use a small dedicated encrypted API only if binary scan streaming and acknowledgements cannot be implemented cleanly through ESPHome.
+
+### Repository direction: fork or continue
+
+Evaluate three choices with a short radio-API proof of concept before committing to a migration:
+
+#### Fork BRMesh Hub
+
+Advantages:
+
+- Working discovery, binding, heartbeat parsing, transmit scheduling, and protocol self-tests.
+- Direct NimBLE radio control and tested ESP32-C6 hardware support.
+- MIT license permits reuse with attribution.
+
+Disadvantages:
+
+- Its mesh database, Fastcon codec, web UI, REST API, MQTT discovery, and application state live on the ESP.
+- Turning it into a protocol-neutral radio would remove or relocate most of its current product architecture.
+- It is standalone PlatformIO firmware rather than ESPHome, so the current provisioning, OTA, API encryption, and diagnostics path would change.
+
+#### Continue esphome-fastcon
+
+Advantages:
+
+- The current ESP32 board and radio path are already hardware-tested with this installation.
+- ESPHome already supplies Wi-Fi provisioning, encrypted native API, OTA, logging, safe mode, and Home Assistant device diagnostics.
+- Existing packet construction and light entities can remain available as a legacy mode during migration.
+
+Disadvantages:
+
+- The component currently puts Fastcon protocol and light semantics on the ESP, so a new raw-radio mode and binary API are required.
+- ESPHome's normal YAML entities are static and cannot provide the desired dynamic device model by themselves.
+- Discovery and binding still need implementation and validation.
+
+#### Companion project with selective reuse
+
+Create a Home Assistant custom integration plus a protocol-neutral radio component/firmware, while keeping this repository's existing light component supported. Port or adapt only the validated, MIT-licensed Fastcon codec, discovery, bind, heartbeat, and reference-vector tests from BRMesh Hub, with attribution, into the Home Assistant side or a shared protocol library.
+
+### Current recommendation
+
+Do not fork all of BRMesh Hub as the first step. Continue the current codebase long enough to prototype the raw radio API, and create the Home Assistant integration as a companion project. Use BRMesh Hub as the primary validated protocol and test-vector reference and selectively reuse its MIT-licensed implementation where appropriate.
+
+Reconsider a BRMesh Hub firmware fork if the proof of concept shows that ESPHome cannot reliably provide continuous scan events, binary payload transport, transmission acknowledgements, and command cancellation. The decision gate is a working end-to-end test in which Home Assistant receives a discovery frame, submits one raw 24-byte frame, and receives an unambiguous completion result without any Fastcon knowledge on the ESP.
+
+This separation allows the existing ESPHome light component to remain stable for current users while the new integration develops without forcing a premature firmware rewrite.
+
 ## Home Assistant scene and group editor
 
 ### Goal
